@@ -11,6 +11,7 @@
 <script>
     // vue.util.defineReactive(obj, key, val)
     function defineReactive(obj, key, val){
+        observe(val)
         Object.defineProperty(obj, key, {
             get(){
                 console.log(`key:${key},val:${val}`)
@@ -18,11 +19,21 @@
             },
             set(newVal) {
                 if(newVal !== val){
-                    console.log(`newVal:${newVal}, val:${val}`)
+                    observe(newVal)
+                    console.log(`newVal:${newVal}, val:${newVal}`, newVal)
                     val = newVal
-                    update()
+                    // update()
                 }
             }
+        })
+    }
+
+    function observe(obj) {
+        if(typeof obj !== 'object' || obj === null || obj === undefined){
+            return
+        }
+        Object.keys(obj).forEach(key => {
+            defineReactive(obj, key, obj[key])
         })
     }
 
@@ -30,13 +41,22 @@
         app.textContent = obj.a
     }
 
-    let obj = {}
-    defineReactive(obj, 'a', 'a')
+    let obj = {
+        a: '001',
+        b: '002',
+        c: {
+            d: '003'
+        }
+    }
+    observe(obj)
+    // defineReactive(obj, 'a', 'a')
     obj.a
     obj.a = 'b'
-    setInterval(() => {
-        obj.a = new Date().toLocaleTimeString()
-    }, 1000)
+    // setInterval(() => {
+    //     obj.a = new Date().toLocaleTimeString()
+    // }, 1000)
+    obj.c = {d:'0-2'},
+    obj.c.d
 
 </script>
 </body>
