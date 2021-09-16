@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vue1.2</title>
+  </head>
+  <body>
+    <div id="app">
+      <p>{{count}}</p>
+      <p k-text="count2"></p>
+      <p k-html="desc"></p>
+    </div>
+    <script>
+      // vue.util.defineReactive(obj, key, val)
+      function defineReactive(obj, key, val) {
+        observe(val);
+        Object.defineProperty(obj, key, {
+          get() {
+            console.log("key", key, val);
+            return val;
+          },
+          set(v) {
+            console.log("set", key, v);
+            observe(v);
+            val = v;
+          },
+        });
+      }
+
+      function observe(obj) {console.log('obj', obj, typeof obj)
+        if (typeof obj !== "object" || obj === null) {
+          return;
+        }
+        Object.keys(obj).forEach((key) => defineReactive(obj, key, obj[key]));
+      }
+      // obj 必须是响应式数据
+      function set(obj, key, val) {
+        defineReactive(obj, key, val);
+      }
+
+      function proxy(vm) {
+        Object.keys(vm.$data).forEach((key) => {
+          Object.defineProperty(vm, key, {
+            get() {
+              return vm.$data[key];
+            },
+            set(v) {
+                vm.$data[key] = v
+            },
+          });
+        });
+      }
+
+      class Vue {
+        constructor(options) {
+          this.$options = options;
+          this.$data = options.data;
+          observe(this.$data);
+          proxy(this);
+          new Compile(options.el, this);
+        }
+      }
+
+      class Compile {
+        constructor(el, vm) {
+          this.$vm = vm;
+          const dom = document.querySelector(el);
+          this.compile(dom);
+        }
+
+        compile(el) {
+          const childNodes = el.childNodes;
+          console.log("childNodes", childNodes);
+          childNodes.forEach((node) => {
+            console.log("node", node);
+            if (this.isElement(node)) {
+              const attrs = node.attributes;
+              Array.from(attrs).forEach((attr) => {
+                console.log(attr, attr.name, attr.value);
+                const attrName = attr.name;
+                const exp = attr.value;
+                if (this.isDir(attrName)) {
+                  const dir = attrName.substring(2);
+                  this[dir] && this[dir](node, exp);
+                }
+              });
+              if (node.childNodes.length > 0) {
+                this.compile(node);
+              }
+            } else if (this.isInter(node)) {
+              this.compileText(node);
+            }
+          });
+        }
+
+        update(node, exp, dir) {
+            const fn = this[dir+'Update']
+            fn && fn(node, this.$vm[exp])
+        }
+
+        html(node, exp) {
+            this.update(node, exp, 'html')
+        }
+
+        htmlUpdate(node, val) {
+            node.innerHTML = val
+        }
+
+        text(node, exp) {
+            // node.textContent = this.$vm[exp]
+            this.update(node, exp, 'text')
+        }
+
+        textUpdate(node, val) {
+            node.textContent = val
+        }
+
+        compileText(node) {
+          console.log("RegExp", RegExp);
+        //   node.textContent = this.$vm[RegExp.$1]
+          this.update(node, RegExp.$1, 'text')
+        }
+
+        isElement(node) {
+          return node.nodeType === 1;
+        }
+
+        isInter(node) {
+          return node.nodeType === 3 && /\{\{(.*)\}\}/.test(node.textContent);
+        }
+
+        isDir(attrName) {
+          return attrName.startsWith("k-");
+        }
+      }
+
+    </script>
+    <script>
+      const app = new Vue({
+        el: "#app",
+        data: {
+          count: 1,
+          count2: 200,
+          desc: '<span style="color: red;">coboy</span>',
+        },
+      });
+      setInterval(() => {
+        app.count++;
+      }, 1000);
+      setInterval(() => {
+        app.count2++;
+      }, 1500);
+    </script>
+  </body>
+</html>
