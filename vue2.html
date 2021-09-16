@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reactive</title>
+</head>
+<body>
+    <div id="app">初始值</div>
+<script>
+// vue.util.defineReactive(obj, key, val)
+function defineReactive(obj, key, val) {
+    observe(val)
+    Object.defineProperty(obj, key, {
+        get() {
+            console.log('get', key, val)
+            return val
+        },
+        set(v) {
+            console.log('set', v)
+            observe(v)
+            val = v
+            update()
+        }
+    })
+}
+
+function observe(val) {
+    if(typeof val !== 'object' || val === null || val === undefined){
+        return
+    }
+    Object.keys(val).forEach(key => {
+        defineReactive(val, key, val[key])
+    })
+}
+
+function set(obj, key, val){
+    defineReactive(obj, key, val)
+}
+
+function update() {
+    app.innerHTML = o.a
+}
+let o = {a:'2', b:{c: 3}}
+// defineReactive(o, 'a', 1)
+observe(o)
+o.a
+o.a = 2
+set(o, 'd', 'd')
+o.d
+// setInterval(() => {
+//     o.b.c = new Date().toLocaleTimeString()
+// }, 1000)
+</script>
+</body>
+</html>
